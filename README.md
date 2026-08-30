@@ -4,12 +4,12 @@ Split one live camera frame across the keys of an Elgato Stream Deck, so the
 whole device becomes a single low-resolution display. Press any key and the deck
 zooms into it.
 
-**[Live demo](https://example.com)** &mdash; runs entirely in the browser, no
+**[Live demo](https://robdahl.github.io/slicedeck/)** &mdash; runs entirely in the browser, no
 camera or hardware needed. Slice a generated orbital scene, real NASA footage
 (Earth from the ISS, Perseverance's descent to Mars, the Sun, Jupiter), a video
 file off your own disk, or your webcam. **[How it works](#how-it-works)**
 
-<!-- TODO: replace the demo link once GitHub Pages is live, and drop a capture at docs/demo.gif -->
+<!-- TODO: drop a capture at docs/demo.gif -->
 
 ---
 
