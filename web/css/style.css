@@ -1,0 +1,580 @@
+/* Slicedeck - demo styling.
+   Dark instrument-panel look: the deck is the hero, everything else is chrome. */
+
+:root {
+  --bg: #0a0c12;
+  --bg-raised: #12151e;
+  --bg-sunken: #070910;
+  --line: #232839;
+  --text: #e7ebf4;
+  --text-dim: #8b93a8;
+  --accent: #5ce1c8;
+  --accent-dim: #2b7f70;
+  --warn: #ffb454;
+  --deck-body: #1a1d26;
+  --deck-well: #05060a;
+  --radius: 14px;
+  --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #16203a 0%, transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { line-height: 1.2; margin: 0; }
+
+/* --- masthead ----------------------------------------------------------- */
+
+.masthead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 1.6rem clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--line);
+}
+
+.masthead__brand { display: flex; align-items: center; gap: 1rem; }
+
+.masthead__mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--deck-body);
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+  gap: 3px;
+  padding: 6px;
+}
+.masthead__mark::before,
+.masthead__mark::after {
+  content: '';
+  border-radius: 3px;
+  background: var(--accent);
+  box-shadow: 0 0 10px rgba(92, 225, 200, 0.35);
+}
+.masthead__mark::after { background: var(--accent-dim); }
+
+.masthead h1 { font-size: 1.15rem; letter-spacing: -0.01em; }
+.masthead p { margin: 0.15rem 0 0; color: var(--text-dim); font-size: 0.9rem; }
+
+.masthead__links { display: flex; gap: 1.25rem; font-size: 0.9rem; }
+.masthead__links a { color: var(--text-dim); text-decoration: none; }
+.masthead__links a:hover { color: var(--accent); }
+
+/* --- layout ------------------------------------------------------------- */
+
+main {
+  max-width: 1220px;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) clamp(1rem, 4vw, 3rem) 4rem;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 288px;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+.panel {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem 1.25rem;
+}
+/* Scoped to the stacked side column: in the .controls grid every panel is a
+   sibling of another, and a blanket margin knocked the second and third out of
+   line with the first. */
+.stage__side .panel + .panel { margin-top: 1.25rem; }
+
+.panel h2 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin-bottom: 0.85rem;
+}
+.panel__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  margin-bottom: 0.85rem;
+}
+.panel__head h2 { margin-bottom: 0; }
+/* The chain takes the slack, so the heading and the Clear button stay pinned to
+   the two ends of the row whatever the chain says. */
+.panel__head .chain {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- the deck ----------------------------------------------------------- */
+
+/* The column is a query container so the deck can be sized from whichever
+   runs out first: the width beside the telemetry panels, or the viewport
+   height. Height matters because the filter bar below has to stay on screen -
+   toggling a filter is pointless if it scrolls the keys out of view. */
+.stage__deck { container-type: inline-size; }
+
+.deck {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  justify-content: center;
+  position: relative;
+}
+
+.deck__body {
+  /* Sized by the grid inside it rather than filling the column, so the body
+     never draws a strip of bezel beside a height-capped grid. */
+  flex: 0 1 auto;
+  background: linear-gradient(180deg, #212533 0%, var(--deck-body) 55%, #14161f 100%);
+  border: 1px solid #2c3243;
+  border-radius: 18px;
+  padding: 1.1rem;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 26px 60px -22px rgba(0, 0, 0, 0.9);
+}
+
+.deck__brandline {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-bottom: 0.7rem;
+  opacity: 0.5;
+}
+.deck__brandline span {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: #3b4257;
+}
+.deck__brandline span:last-child { width: 8px; }
+
+.deck__grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 8), 1fr);
+  grid-template-rows: repeat(var(--rows, 4), 1fr);
+  gap: clamp(5px, 0.9vw, 11px);
+  aspect-ratio: var(--cols, 8) / var(--rows, 4);
+  /* Whichever runs out first, with a floor so a very short window still shows a
+     usable deck. 92px side keys + 1rem deck gap + 2.2rem body padding is what
+     the grid does not get from the column width; 490px is everything stacked
+     above and below it that also has to fit - masthead, bezel, caption row and
+     the filter bar. */
+  height: max(
+    160px,
+    min(
+      calc(100vh - 490px),
+      calc((100cqw - 92px - 3.2rem) * var(--rows, 4) / var(--cols, 8))
+    )
+  );
+  width: auto;
+}
+
+.deck__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.deck__zoomer {
+  position: absolute;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(92, 225, 200, 0.6), 0 20px 50px -12px rgba(0, 0, 0, 0.8);
+  will-change: transform, opacity;
+}
+.deck__zoomer--out {
+  background: rgba(92, 225, 200, 0.1);
+  border: 1px solid rgba(92, 225, 200, 0.5);
+}
+
+/* --- keys --------------------------------------------------------------- */
+
+.key {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--deck-well);
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.7),
+    0 2px 5px rgba(0, 0, 0, 0.55) inset,
+    0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: box-shadow 140ms ease;
+  will-change: transform;
+}
+
+.key__screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  /* The key's own LCD look: a faint sheen across the top of the glass. */
+  filter: saturate(1.05);
+}
+
+.key::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, transparent 42%);
+  pointer-events: none;
+}
+
+.key:hover { box-shadow: 0 0 0 1px rgba(92, 225, 200, 0.55), 0 0 18px -4px rgba(92, 225, 200, 0.5); }
+.key:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.key__flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- side keys ---------------------------------------------------------- */
+
+.deck__side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  width: 92px;
+  padding: 1.1rem 0;
+}
+
+.sidekey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.7rem 0.4rem;
+  border-radius: 11px;
+  border: 1px solid #2c3243;
+  background: linear-gradient(180deg, #242938 0%, #171a24 100%);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: transform 90ms ease, border-color 140ms ease, opacity 140ms ease;
+}
+.sidekey__icon { font-size: 1.1rem; line-height: 1; color: var(--accent); }
+.sidekey__label { letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); }
+.sidekey:hover:not(:disabled) { border-color: var(--accent-dim); }
+.sidekey:active:not(:disabled) { transform: translateY(2px) scale(0.96); }
+.sidekey:disabled { opacity: 0.32; cursor: default; }
+
+.sidekey__hint {
+  margin-top: auto;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  text-align: center;
+  line-height: 1.7;
+}
+kbd {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  background: #1b1f2b;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+
+/* Caption left, status right, on one baseline - two stacked lines here cost
+   vertical space the filter bar needs. */
+.deck__meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  min-height: 1.5rem;
+}
+
+.deck__caption {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-family: var(--mono);
+}
+
+.status { margin: 0; font-size: 0.85rem; text-align: right; }
+.status[data-tone='ok'] { color: var(--accent); }
+.status[data-tone='warn'] { color: var(--warn); }
+
+/* --- side panels -------------------------------------------------------- */
+
+#minimap {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  display: block;
+}
+
+.viewport__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.7rem;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.badge {
+  font-family: var(--mono);
+  color: var(--accent);
+  background: rgba(92, 225, 200, 0.1);
+  border: 1px solid rgba(92, 225, 200, 0.25);
+  border-radius: 999px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.75rem;
+}
+
+.viewport__right { display: flex; align-items: center; gap: 0.5rem; }
+.viewport__right em { font-style: normal; font-size: 0.72rem; color: var(--text-dim); }
+
+/* Interpolated zoom gets a warmer badge, so magnification past 1:1 reads as a
+   different kind of number rather than more of the same. */
+.badge--soft {
+  color: var(--warn);
+  background: rgba(255, 180, 84, 0.1);
+  border-color: rgba(255, 180, 84, 0.3);
+}
+
+.hud { display: grid; gap: 0.55rem; margin: 0; }
+.hud > div { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.hud dt { color: var(--text-dim); font-size: 0.82rem; }
+.hud dd { margin: 0; font-family: var(--mono); font-size: 0.9rem; color: var(--text); }
+
+.hint { color: var(--text-dim); font-size: 0.8rem; margin: 0.7rem 0 0; }
+code { font-family: var(--mono); font-size: 0.85em; color: var(--accent); }
+
+/* --- form controls ------------------------------------------------------ */
+
+.radios { display: grid; gap: 0.45rem; }
+.radios label,
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+input[type='radio'], input[type='checkbox'] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+.text-input {
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+.text-input:focus { outline: none; border-color: var(--accent-dim); }
+
+/* One slot for whichever source's options are showing. The floor keeps the
+   three control panels the same height as the visitor switches between them. */
+.source-extra { margin-top: 0.9rem; min-height: 5.5rem; }
+.source-extra__pane[hidden] { display: none; }
+.source-extra__pane .hint { margin-top: 0.55rem; }
+
+.select-input,
+.file-input {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+}
+.select-input:focus,
+.file-input:focus { outline: none; border-color: var(--accent-dim); }
+.file-input::file-selector-button {
+  margin-right: 0.6rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg-raised);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.credit {
+  margin: 0.9rem 0 0;
+  min-height: 1.1rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.slider-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.4rem 0.75rem;
+  margin-top: 0.9rem;
+  font-size: 0.85rem;
+}
+.slider-row span { color: var(--text-dim); }
+.slider-row input { grid-column: 1 / -1; }
+.slider-row output { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+
+input[type='range'] { width: 100%; accent-color: var(--accent); }
+
+.ghost {
+  background: none;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  border-radius: 7px;
+  padding: 0.2rem 0.6rem;
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.ghost:hover { color: var(--accent); border-color: var(--accent-dim); }
+
+/* --- filters ------------------------------------------------------------ */
+
+.panel--filters { margin-top: 1rem; }
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 0.55rem;
+}
+/* Fixed rows: a filter with no argument still reserves the slider's line, so
+   the toggles line up across the grid instead of drifting row by row. */
+.filter {
+  display: grid;
+  grid-template-rows: 34px 18px;
+  gap: 0.3rem;
+  align-content: start;
+}
+.filter__spacer { display: block; }
+
+.filter__toggle {
+  padding: 0 0.6rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--bg-sunken);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.filter__toggle:hover { border-color: var(--accent-dim); color: var(--text); }
+.filter__toggle.is-on {
+  background: rgba(92, 225, 200, 0.14);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.filter__slider { width: 100%; height: 18px; margin: 0; }
+.filter__slider:disabled { opacity: 0.25; }
+
+/* --- prose -------------------------------------------------------------- */
+
+.prose { margin-top: 3.5rem; }
+.prose > h2 {
+  font-size: 1.35rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--line);
+}
+.prose > h2:not(:first-child) { margin-top: 2.75rem; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.1rem;
+}
+.cards article {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.2rem;
+}
+.cards h3 { font-size: 0.95rem; color: var(--accent); margin-bottom: 0.5rem; }
+.cards p { margin: 0; font-size: 0.88rem; color: #b9c1d4; }
+
+pre {
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+}
+pre code { color: #cbd3e6; font-size: 0.83rem; line-height: 1.7; }
+
+footer {
+  border-top: 1px solid var(--line);
+  padding: 1.5rem clamp(1rem, 4vw, 3rem);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+/* --- responsive --------------------------------------------------------- */
+
+@media (max-width: 940px) {
+  .stage { grid-template-columns: minmax(0, 1fr); }
+  .stage__side { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.25rem; }
+  .stage__side .panel + .panel { margin-top: 0; }
+}
+
+@media (max-width: 620px) {
+  .deck { flex-direction: column; }
+  /* Stacked layout: no side-key column to subtract, and height is no longer the
+     scarce axis. */
+  .deck__grid { height: auto; width: 100%; }
+  .deck__body { flex: 1; }
+  .deck__meta { flex-direction: column; align-items: flex-start; gap: 0.25rem; }
+  .status { text-align: left; }
+  .deck__side { flex-direction: row; width: auto; padding: 0; align-items: stretch; }
+  .sidekey { flex: 1; flex-direction: row; gap: 0.5rem; }
+  .sidekey__hint { margin: 0; align-self: center; text-align: right; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}

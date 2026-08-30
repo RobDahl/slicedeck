@@ -1,0 +1,38 @@
+# --- Secrets ---
+.env
+.env.local
+*.pem
+
+# --- Captured frames (may contain footage of private spaces) ---
+streamdeck_slices/
+captures/
+*.jpg
+*.jpeg
+*.png
+!web/assets/**/*.png
+!docs/**/*.png
+!docs/**/*.jpg
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# --- Agent / assistant scratch ---
+CLAUDE.md
+.claude/
+AGENTS.md
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Slicedeck - one live feed across 32 Stream Deck keys</title>
+<meta name="description" content="A live camera frame split across the keys of a Stream Deck. Press any key to zoom the whole deck into it. Real-time filters, per-key motion detection, and dirty-tile skipping." />
+<meta property="og:title" content="Slicedeck" />
+<meta property="og:description" content="One live camera feed, split across the keys of a Stream Deck. Press a key to zoom into it." />
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23131722'/><g fill='%235ce1c8'><rect x='6' y='8' width='7' height='7' rx='1.5'/><rect x='15' y='8' width='7' height='7' rx='1.5'/><rect x='6' y='17' width='7' height='7' rx='1.5'/><rect x='15' y='17' width='7' height='7' rx='1.5' opacity='.45'/></g></svg>" />
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead__brand">
+    <span class="masthead__mark" aria-hidden="true"></span>
+    <div>
+      <h1>Slicedeck</h1>
+      <p>One live video feed, split across the keys of a Stream Deck.</p>
+    </div>
+  </div>
+  <nav class="masthead__links">
+    <a href="#how">How it works</a>
+    <!-- TODO: point at the repository before publishing -->
+    <a href="https://github.com/" data-repo-link>Source</a>
+  </nav>
+</header>
+
+<main>
+  <section class="stage">
+    <div class="stage__deck">
+      <div class="deck">
+        <div class="deck__body">
+          <div class="deck__brandline"><span></span><span></span></div>
+          <div class="deck__grid" role="group" aria-label="Stream Deck keys"></div>
+        </div>
+        <div class="deck__overlay" aria-hidden="true"></div>
+
+        <aside class="deck__side">
+          <button id="btn-back" class="sidekey" type="button" disabled>
+            <span class="sidekey__icon" aria-hidden="true">&#8598;</span>
+            <span class="sidekey__label">Back</span>
+          </button>
+          <button id="btn-home" class="sidekey" type="button" disabled>
+            <span class="sidekey__icon" aria-hidden="true">&#9635;</span>
+            <span class="sidekey__label">Full</span>
+          </button>
+          <div class="sidekey__hint">
+            <kbd>Esc</kbd> full<br /><kbd>&#8592;</kbd> back<br /><kbd>Space</kbd> pause
+          </div>
+        </aside>
+      </div>
+
+      <div class="deck__meta">
+        <p class="deck__caption" id="deck-caption"></p>
+        <p class="status" id="status" data-tone=""></p>
+      </div>
+
+      <!-- Filters sit under the deck on purpose: toggling one is only legible
+           while the keys are still on screen. -->
+      <div class="panel panel--filters">
+        <div class="panel__head">
+          <h2>Filters</h2>
+          <p class="chain">Chain: <code id="chain">none</code></p>
+          <button type="button" id="btn-clear-filters" class="ghost">Clear</button>
+        </div>
+        <div class="filters" id="filters"></div>
+        <p class="hint">Applied to the whole frame before slicing, so edges and pixel blocks stay continuous across key boundaries. The chain is ordered.</p>
+      </div>
+    </div>
+
+    <div class="stage__side">
+      <div class="panel panel--viewport">
+        <h2>Viewport</h2>
+        <canvas id="minimap" width="260" height="150" aria-label="Full frame with the current viewport outlined"></canvas>
+        <div class="viewport__meta">
+          <span id="zoom-depth">Full frame</span>
+          <span class="viewport__right">
+            <em id="zoom-quality"></em>
+            <span id="zoom-mag" class="badge">1.0x</span>
+          </span>
+        </div>
+        <p class="hint">Press any key to zoom the whole deck into it. The teal box is what the deck is showing.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Telemetry</h2>
+        <dl class="hud">
+          <div><dt>Frame rate</dt><dd id="hud-fps">0</dd></div>
+          <div><dt>Keys</dt><dd id="hud-keys">32</dd></div>
+          <div><dt>Tiles drawn</dt><dd id="hud-drawn">0</dd></div>
+          <div><dt>Redraws skipped</dt><dd id="hud-skipped">0%</dd></div>
+          <div><dt>Filter pass</dt><dd id="hud-filter">0 ms</dd></div>
+          <div><dt>Slice + motion</dt><dd id="hud-slice">0 ms</dd></div>
+        </dl>
+        <p class="hint" id="hover"></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="panel">
+      <h2>Source</h2>
+      <div class="radios">
+        <label><input type="radio" name="source" id="source-scene" checked /> <span>Simulated orbit</span></label>
+        <label><input type="radio" name="source" id="source-nasa" /> <span>NASA footage</span></label>
+        <label><input type="radio" name="source" id="source-file" /> <span>Your own video file</span></label>
+        <label><input type="radio" name="source" id="source-webcam" /> <span>Your camera</span></label>
+        <label><input type="radio" name="source" id="source-api" /> <span>Live API</span></label>
+      </div>
+
+      <!-- One slot, swapped by selection, with a fixed height so choosing a
+           source never shifts the panels beside it. -->
+      <div class="source-extra">
+        <div class="source-extra__pane" data-for="scene">
+          <p class="hint">Generated in the browser: no camera, no network, no server. Mirrors the Python <code>synthetic</code> source.</p>
+        </div>
+
+        <div class="source-extra__pane" data-for="nasa" hidden>
+          <select id="nasa-clip" class="select-input" aria-label="NASA clip"></select>
+          <p class="hint" id="nasa-note"></p>
+        </div>
+
+        <div class="source-extra__pane" data-for="file" hidden>
+          <input id="file-input" class="file-input" type="file" accept="video/*" />
+          <p class="hint">Stays on your machine - the file is read straight into a <code>&lt;video&gt;</code> element, nothing is uploaded.</p>
+        </div>
+
+        <div class="source-extra__pane" data-for="webcam" hidden>
+          <p class="hint">Your own feed across every key. The stream never leaves the page.</p>
+        </div>
+
+        <div class="source-extra__pane" data-for="api" hidden>
+          <input id="api-url" class="text-input" type="url" placeholder="http://localhost:8080" spellcheck="false" />
+          <p class="hint">Talks to the Python service in this repo, so the same pipeline drives the browser and real hardware.</p>
+        </div>
+      </div>
+      <p class="credit" id="source-credit"></p>
+    </div>
+
+    <div class="panel">
+      <h2>Deck model</h2>
+      <div class="radios">
+        <label><input type="radio" name="deck" id="deck-mini" /> <span>Mini &middot; 3&times;2</span></label>
+        <label><input type="radio" name="deck" id="deck-mk2" /> <span>MK.2 &middot; 5&times;3</span></label>
+        <label><input type="radio" name="deck" id="deck-xl" checked /> <span>XL &middot; 8&times;4</span></label>
+        <label><input type="radio" name="deck" id="deck-plus" /> <span>Plus &middot; 4&times;2</span></label>
+      </div>
+      <p class="hint">Grid and key resolution match the real hardware, so each key canvas holds exactly what the device would receive.</p>
+    </div>
+
+    <div class="panel">
+      <h2>Pipeline</h2>
+      <label class="switch">
+        <input type="checkbox" id="motion" checked />
+        <span>Motion detection &amp; dirty-tile skipping</span>
+      </label>
+      <label class="slider-row">
+        <span>Target rate</span>
+        <input type="range" id="fps" min="1" max="60" value="24" />
+        <output id="fps-value">24 fps</output>
+      </label>
+      <p class="hint">Turn skipping off and watch <em>redraws skipped</em> fall to zero.</p>
+    </div>
+  </section>
+
+  <section class="prose" id="how">
+    <h2>How it works</h2>
+
+    <div class="cards">
+      <article>
+        <h3>Aspect-correct slicing</h3>
+        <p>
+          Dividing the frame width by columns and height by rows is the obvious
+          approach, and it is wrong: a Stream Deck key is square, so 16:9 cells
+          arrive stretched. The frame is cropped to the deck's aspect ratio
+          first, then divided, so every tile is square and the mosaic lines up.
+        </p>
+      </article>
+      <article>
+        <h3>Zoom is a stack of rectangles</h3>
+        <p>
+          Pressing a key pushes that key's rectangle &mdash; in <em>source</em>
+          pixels, not screen pixels &mdash; so the whole deck becomes the inside
+          of one key. How far it goes is pure geometry: an XL divides by 8
+          across, so a 720p frame is spent in a single press, while a Mini
+          (&divide;3) manages three levels. Past 1:1 the badge reads
+          <em>interpolated</em>, and the stack refuses a press that would leave
+          cells with almost no pixels in them.
+        </p>
+      </article>
+      <article>
+        <h3>Two-signal motion</h3>
+        <p>
+          Mean frame difference catches a whole tile changing but a small fast
+          object averages away to nothing. Changed-area &mdash; the share of
+          pixels moving past a noise floor &mdash; catches the small object but
+          ignores uniform drift. A key counts as moving if either fires, and
+          that verdict is what decides whether the key is redrawn at all.
+        </p>
+      </article>
+      <article>
+        <h3>Dirty-tile skipping</h3>
+        <p>
+          Only keys that actually changed get redrawn. On a static scene that is
+          the difference between 32 redraws per frame and none; the
+          <em>redraws skipped</em> figure in the telemetry panel is measured
+          live, not quoted. Turn the switch off and watch it fall to zero.
+        </p>
+      </article>
+      <article>
+        <h3>Why these clips and not a live stream</h3>
+        <p>
+          Every frame is read back out of the canvas, so a feed served without
+          <code>Access-Control-Allow-Origin</code> taints it and takes the
+          filters and the motion detector down with it. NASA's public asset host
+          sends the header and honours range requests, so the footage streams in
+          and stays sliceable. Embedded players and the public HLS endpoints do
+          neither, which is why they are not offered here.
+        </p>
+      </article>
+      <article>
+        <h3>One algorithm, two runtimes</h3>
+        <p>
+          The grid maths and motion detector exist twice: Python for the
+          hardware pipeline, JavaScript for this page. They are deliberate ports
+          of each other, and the Python test suite is the shared specification
+          for both.
+        </p>
+      </article>
+      <article>
+        <h3>Real hardware path</h3>
+        <p>
+          Off this page, the same pipeline reads a Reolink snapshot endpoint or
+          any MJPEG stream and pushes tiles straight to a Stream Deck over USB
+          HID &mdash; no polling a folder of JPEGs through a local web server.
+        </p>
+      </article>
+    </div>
+
+    <h2>Run it yourself</h2>
+    <pre><code>pip install -e ".[server]"
+cp .env.example .env          # set your camera details
+slicedeck --serve         # http://localhost:8080</code></pre>
+    <p class="hint">
+      No camera to hand? <code>slicedeck --source synthetic</code> runs the
+      whole pipeline against the generated scene.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <p>Built with the Canvas API and Python. No frameworks, no build step, no tracking.</p>
+  <p>Video clips courtesy of NASA and in the public domain. Slicedeck is not endorsed by or affiliated with NASA.</p>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

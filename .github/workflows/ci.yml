@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.10', '3.12']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+
+      - name: Install
+        run: pip install -e ".[dev,server]"
+
+      - name: Lint
+        run: ruff check .
+
+      - name: Test
+        run: pytest -q
+
+  secrets:
+    name: No credentials in the tree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail if a .env or a hardcoded password is committed
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env is committed; it must stay gitignored"
+            exit 1
+          fi
+          # The camera password used to live in the source. Make sure no
+          # password= query parameter with a literal value comes back.
+          if grep -rInE 'password=[A-Za-z0-9]{8,}' --include='*.py' --include='*.js' .; then
+            echo "::error::a literal password appears in the source"
+            exit 1
+          fi
